@@ -208,11 +208,7 @@ long_mode_entry:
 
     call kernel_main
 
-hang:
-    hlt
-    jmp hang
-
-# .quad emits 8 bytes. So with .align 8, the gdt label starts at a clean 8-byte 
+# .quad emits 8 bytes.  So with .align 8, the gdt label starts at a clean 8-byte 
 # boundary.
 # Strictly speaking, the CPU can load a GDT that is not 8-byte aligned.  But
 # alignment is the natural layout, avoids surprises, and makes each descriptor

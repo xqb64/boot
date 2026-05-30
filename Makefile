@@ -56,3 +56,6 @@ run: os.img
 
 clean:
 	rm -f *.o kernel.elf os.img
+
+format:
+	clang-format kernel.c -style=file:.clang-format -i
