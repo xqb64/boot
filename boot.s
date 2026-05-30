@@ -22,6 +22,8 @@
 # stack, and set up paging through a quick identity-mapping for the first 1GiB,
 # and then finally proceed to long mode.
 
+.extern kernel_main
+
 .set CODE32, 0x08
 .set DATA,   0x10
 .set CODE64, 0x18
@@ -114,7 +116,7 @@ protected_mode_entry:
     # 4096       = page size in bytes
     # 4096*3     = size of 3 pages in bytes
     # (4096*3)/4 = number of 32-bit words in three pages
-    movl $(4096 * 3 / 4), %ecx
+    movl $(4096 * 3 >> 2), %ecx
     # Clear the direction flag.
     cld
     # Store String Long (32-bit)
@@ -204,10 +206,7 @@ long_mode_entry:
     movw %ax, %es
     movw %ax, %ss
 
-    # Write 'L' to top-left VGA cell.
-    movq $0xb8000, %rdi
-    movb $'L', (%rdi)
-    movb $0x0f, 1(%rdi)
+    call kernel_main
 
 hang:
     hlt
@@ -249,7 +248,3 @@ gdt_desc:
     # base address of the GDT (Global Descriptor Table)
     .long gdt 
 
-# pad with zero bytes until we are at byte offset 510
-.org 510
-# boot signature
-.word 0xaa55
