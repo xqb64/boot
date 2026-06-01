@@ -30,11 +30,16 @@ void kprintf(char *s)
   }
 }
 
-__attribute__((noreturn)) void kernel_main(void)
+__attribute__((noreturn)) void kmain(void)
 {
   clear_vga();
   kprintf("Hello, world!");
   for (;;) {
     asm volatile("hlt");
   }
+}
+
+__attribute__((noreturn, section(".text.entry"))) void _start(void)
+{
+  kmain();
 }
