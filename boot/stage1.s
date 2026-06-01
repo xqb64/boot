@@ -81,6 +81,9 @@ disk_error:
     movw %ax, %es
     movb $'E', %es:0
     movb $0x4f, %es:1
+hang:
+    hlt
+    jmp hang
 
 boot_drive:
     .byte 0

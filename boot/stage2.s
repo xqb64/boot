@@ -14,12 +14,16 @@
 .global _start
 
 _start:
+    # Disable interrupts.
     cli
 
+    # Zero out the segment registers.
     xorw %ax, %ax
     movw %ax, %ds
     movw %ax, %es
     movw %ax, %ss
+
+    # Establish a new stack.
     movw $0x7c00, %sp
 
     # Stage1 passes the BIOS boot drive in DL.
@@ -52,28 +56,32 @@ _start:
     #       A far jump changes both the code segment register and the ip.
     ljmp $CODE32, $protected_mode_entry
 
-# Read KERNEL_SECTORS sectors starting at KERNEL_LBA.
-# Uses BIOS INT 13h extensions, AH=42h, one sector per call.
+# Prepare to load the kernel:
+#  - we need to read KERNEL_SECTORS sectors
+#  - put them temporarily at KERNEL_TMP_SEG:0000
+#  - start reading from disk LBA KERNEL_LBA
+#  - make sure the 64-bit LBA value is clean
+# 
+# NOTE: DAP = Disk Address Packet
 load_kernel:
     movw $KERNEL_SECTORS, sectors_left
     movw $KERNEL_TMP_SEG, dap_segment
     movl $KERNEL_LBA, dap_lba
     movl $0, dap_lba + 4
-
 .read_loop:
-    cmpw $0, sectors_left
-    je .done
+    cmpw $0, sectors_left      # are there 0 sectors left to read?
+    je .done                   # if yes, kernel loading is finished
 
-    movb $0x42, %ah
-    movb boot_drive, %dl
-    movw $dap, %si
-    int $0x13
-    jc disk_error
+    movb $0x42, %ah            # BIOS int 13h function 42h = extended LBA read
+    movb boot_drive, %dl       # use the disk we booted from
+    movw $dap, %si             # DS:SI points to the Disk Address Packet
+    int $0x13                  # ask BIOS to read from disk
+    jc disk_error              # if carry flag set, BIOS reported failure
 
-    addw $0x20, dap_segment   # next 512-byte paragraph block
-    addl $1, dap_lba          # next LBA sector
-    decw sectors_left
-    jmp .read_loop
+    addw $0x20, dap_segment    # move destination forward by 512 bytes
+    addl $1, dap_lba           # next disk sector
+    decw sectors_left          # one fewer sector left to read
+    jmp .read_loop             # repeat
 
 .done:
     ret
@@ -256,14 +264,12 @@ gdt_desc:
     .word gdt_end - gdt - 1
     .long gdt
 
-# FIXME: why does this need to be aligned?
-.align 4
 boot_drive:
     .byte 0
 sectors_left:
     .word 0
 
-# FIXME: Disk Address Packet for INT 13h AH=42h.
+# Disk Address Packet for INT 13h AH=42h.
 .align 4
 dap:
     .byte 0x10       # packet size
