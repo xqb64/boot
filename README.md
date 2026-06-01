@@ -1,3 +1,5 @@
-# boot
+# loonix
 
-From real through protected through long mode, print "Hello, world!", halt and catch fire.
+A microkernel for x86-64.
+
+Status: WIP.
