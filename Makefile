@@ -87,3 +87,6 @@ clean:
 		*.elf \
 		*.bin \
 		os.img
+
+format:
+	clang-format kernel/*.c kernel/*.h -style=file:.clang-format -i
